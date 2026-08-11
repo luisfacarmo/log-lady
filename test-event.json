@@ -4,7 +4,7 @@
     "new": true,
     "sessionId": "amzn1.echo-api.session.test",
     "application": {
-      "applicationId": "amzn1.ask.skill.test"
+      "applicationId": "amzn1.ask.skill.PLACEHOLDER"
     },
     "user": {
       "userId": "amzn1.ask.account.test"
@@ -13,7 +13,7 @@
   "context": {
     "System": {
       "application": {
-        "applicationId": "amzn1.ask.skill.test"
+        "applicationId": "amzn1.ask.skill.PLACEHOLDER"
       },
       "user": {
         "userId": "amzn1.ask.account.test"

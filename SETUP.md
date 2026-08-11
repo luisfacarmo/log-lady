@@ -138,7 +138,8 @@ Compress-Archive -Path ./package/* -DestinationPath ../lambda-deployment.zip -Fo
 
 1. **Configuration** → **Triggers** → **Add trigger**
 2. Seleciona **Alexa Skills Kit**
-3. Desmarca "Skill ID verification" por agora
+3. **⚠️ IMPORTANTE:** Marca "Skill ID verification" e cola o Skill ID (ver passo 3.5)
+   - Isto impede que outras skills invoquem a tua Lambda
 4. **Add**
 
 ### 2.9 Copiar o ARN
