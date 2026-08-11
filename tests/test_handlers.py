@@ -5,7 +5,7 @@ Valida que os handlers respondem corretamente sem chamar a API real.
 
 import pytest
 from unittest.mock import patch, MagicMock
-from lambda_function import (
+from notion_client import (
     adicionar_checkbox,
     ler_checkboxes_pendentes,
     marcar_checkbox,
@@ -109,7 +109,7 @@ class TestPesquisarNoNotion:
             ]
         }
 
-        with patch("lambda_function.requests.post", return_value=mock_response):
+        with patch("notion_client.requests.post", return_value=mock_response):
             result = pesquisar_no_notion("mabel")
             assert len(result) == 2
             assert "Mabel" in result
@@ -121,7 +121,7 @@ class TestPesquisarNoNotion:
         mock_response.raise_for_status = MagicMock()
         mock_response.json.return_value = {"results": []}
 
-        with patch("lambda_function.requests.post", return_value=mock_response):
+        with patch("notion_client.requests.post", return_value=mock_response):
             result = pesquisar_no_notion("algo inexistente")
             assert result == []
 
@@ -129,7 +129,7 @@ class TestPesquisarNoNotion:
         import requests as req
 
         with patch(
-            "lambda_function.requests.post",
+            "notion_client.requests.post",
             side_effect=req.exceptions.Timeout("timeout"),
         ):
             result = pesquisar_no_notion("qualquer")
@@ -156,7 +156,7 @@ class TestObterResumoDiario:
             ]
         }
 
-        with patch("lambda_function.requests.get", return_value=mock_response):
+        with patch("notion_client.requests.get", return_value=mock_response):
             resumo = obter_resumo_diario()
             assert "foco" in resumo
             assert "rotina" in resumo

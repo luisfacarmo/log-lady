@@ -21,6 +21,10 @@ t-out.json
 # IDE
 .vscode/
 .idea/
+.claude/
+.cursor/
+.windsurf/
+.kiro/
 
 # OS
 .DS_Store

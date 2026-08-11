@@ -4,7 +4,7 @@ Valida determinar_destino() contra a matriz de regressão completa.
 """
 
 import pytest
-from lambda_function import determinar_destino, limpar_texto
+from routing import determinar_destino, limpar_texto
 
 
 # =============================================================================
