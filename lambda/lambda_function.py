@@ -34,6 +34,9 @@ import messages as msg
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# --- Constantes de segurança ---
+MAX_INPUT_LENGTH = 200
+
 
 # =============================================================================
 # ALEXA HANDLERS
@@ -72,6 +75,10 @@ class AnotarIntentHandler(AbstractRequestHandler):
             )
 
         texto_original = texto.value
+        # Validação: limitar tamanho do input
+        if len(texto_original) > MAX_INPUT_LENGTH:
+            texto_original = texto_original[:MAX_INPUT_LENGTH]
+
         destino_key = determinar_destino(texto_original)
         destino = DESTINOS[destino_key]
 

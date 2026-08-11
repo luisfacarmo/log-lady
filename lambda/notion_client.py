@@ -4,12 +4,17 @@ Encapsula todas as operações com a Notion API.
 """
 
 import logging
+import time
 
 import requests
 
 from config import NOTION_TOKEN, NOTION_API_URL, NOTION_VERSION, DESTINOS
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 1
+RETRY_DELAY_S = 0.5
+REQUEST_TIMEOUT_S = 7
 
 
 def notion_headers() -> dict:
@@ -19,6 +24,30 @@ def notion_headers() -> dict:
         "Content-Type": "application/json",
         "Notion-Version": NOTION_VERSION,
     }
+
+
+def _request_with_retry(method: str, url: str, **kwargs) -> requests.Response:
+    """Executa request HTTP com 1 retry em caso de falha transiente."""
+    kwargs.setdefault("timeout", REQUEST_TIMEOUT_S)
+    kwargs.setdefault("headers", notion_headers())
+
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = getattr(requests, method)(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                logger.warning(f"Retry {attempt + 1}/{MAX_RETRIES} para {method.upper()} {url}")
+                time.sleep(RETRY_DELAY_S)
+            continue
+        except requests.exceptions.RequestException as e:
+            # Erros não-transientes (4xx, etc.) — não faz retry
+            raise
+
+    raise last_error
 
 
 def adicionar_checkbox(page_id: str, texto: str) -> bool:
@@ -43,27 +72,20 @@ def adicionar_checkbox(page_id: str, texto: str) -> bool:
     }
 
     try:
-        response = requests.patch(url, headers=notion_headers(), json=payload, timeout=7)
-        response.raise_for_status()
-        logger.info(f"Checkbox adicionado em {page_id}: {texto}")
+        _request_with_retry("patch", url, json=payload)
+        logger.info(f"Checkbox adicionado em {page_id}")
         return True
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao adicionar checkbox: {e}")
-        if hasattr(e, "response") and e.response is not None:
-            logger.error(f"Response body: {e.response.text}")
         return False
 
 
 def ler_checkboxes_pendentes(page_id: str, limite: int = 10) -> list:
     """Lê os blocos to-do não marcados de uma página."""
     url = f"{NOTION_API_URL}/blocks/{page_id}/children"
-    params = {"page_size": 100}
 
     try:
-        response = requests.get(
-            url, headers=notion_headers(), params=params, timeout=7
-        )
-        response.raise_for_status()
+        response = _request_with_retry("get", url, params={"page_size": 100})
         data = response.json()
 
         pendentes = []
@@ -91,15 +113,10 @@ def ler_checkboxes_pendentes(page_id: str, limite: int = 10) -> list:
 def marcar_checkbox(block_id: str) -> bool:
     """Marca um bloco to-do como checked."""
     url = f"{NOTION_API_URL}/blocks/{block_id}"
-    payload = {
-        "to_do": {
-            "checked": True,
-        }
-    }
+    payload = {"to_do": {"checked": True}}
 
     try:
-        response = requests.patch(url, headers=notion_headers(), json=payload, timeout=7)
-        response.raise_for_status()
+        _request_with_retry("patch", url, json=payload)
         return True
     except requests.exceptions.RequestException as e:
         logger.error(f"Erro ao marcar checkbox: {e}")
@@ -122,14 +139,10 @@ def encontrar_e_marcar_tarefa(page_id: str, nome_tarefa: str) -> tuple:
 def pesquisar_no_notion(query: str) -> list:
     """Pesquisa por texto no workspace inteiro do Notion."""
     url = f"{NOTION_API_URL}/search"
-    payload = {
-        "query": query,
-        "page_size": 5,
-    }
+    payload = {"query": query, "page_size": 5}
 
     try:
-        response = requests.post(url, headers=notion_headers(), json=payload, timeout=7)
-        response.raise_for_status()
+        response = _request_with_retry("post", url, json=payload)
         data = response.json()
 
         resultados = []
