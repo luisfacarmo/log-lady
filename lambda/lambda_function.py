@@ -36,6 +36,24 @@ logger.setLevel(logging.INFO)
 
 # --- Constantes de segurança ---
 MAX_INPUT_LENGTH = 200
+MAX_RESUMO_ITEMS = 3
+
+
+# =============================================================================
+# SESSION HELPERS
+# =============================================================================
+
+
+def get_session_attr(handler_input: HandlerInput, key: str, default=None):
+    """Lê um atributo da sessão."""
+    attrs = handler_input.attributes_manager.session_attributes
+    return attrs.get(key, default)
+
+
+def set_session_attr(handler_input: HandlerInput, key: str, value):
+    """Grava um atributo na sessão."""
+    attrs = handler_input.attributes_manager.session_attributes
+    attrs[key] = value
 
 
 # =============================================================================
@@ -80,11 +98,21 @@ class AnotarIntentHandler(AbstractRequestHandler):
             texto_original = texto_original[:MAX_INPUT_LENGTH]
 
         destino_key = determinar_destino(texto_original)
-        destino = DESTINOS[destino_key]
 
+        # Follow-up: se routing deu "inbox" (genérico) e existe contexto
+        # de sessão, reutilizar o último destino (ex: "e também café")
+        if destino_key == "inbox":
+            last = get_session_attr(handler_input, "last_destino")
+            # Só reutiliza se o texto parece ser um follow-up curto
+            if last and last != "inbox" and len(texto_original.split()) <= 4:
+                destino_key = last
+
+        destino = DESTINOS[destino_key]
         texto_limpo = limpar_texto(texto_original, destino_key)
 
         if adicionar_checkbox(destino["page_id"], texto_limpo):
+            # Guardar contexto para follow-ups
+            set_session_attr(handler_input, "last_destino", destino_key)
             speech = msg.ANOTAR_SUCESSO.format(
                 texto=texto_limpo, emoji=destino["emoji"], nome=destino["nome"]
             )
@@ -200,7 +228,11 @@ class ResumoIntentHandler(AbstractRequestHandler):
         partes = []
 
         if resumo["foco"]:
-            foco_lista = ", ".join(resumo["foco"])
+            foco_items = resumo["foco"][:MAX_RESUMO_ITEMS]
+            foco_lista = ", ".join(foco_items)
+            extra = len(resumo["foco"]) - MAX_RESUMO_ITEMS
+            if extra > 0:
+                foco_lista += f" e mais {extra}"
             partes.append(
                 msg.RESUMO_FOCO.format(
                     count=len(resumo["foco"]),
@@ -212,7 +244,11 @@ class ResumoIntentHandler(AbstractRequestHandler):
             partes.append(msg.RESUMO_FOCO_LIMPO)
 
         if resumo["rotina"]:
-            rotina_lista = ", ".join(resumo["rotina"])
+            rotina_items = resumo["rotina"][:MAX_RESUMO_ITEMS]
+            rotina_lista = ", ".join(rotina_items)
+            extra = len(resumo["rotina"]) - MAX_RESUMO_ITEMS
+            if extra > 0:
+                rotina_lista += f" e mais {extra}"
             partes.append(
                 msg.RESUMO_ROTINA.format(
                     count=len(resumo["rotina"]),
