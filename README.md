@@ -22,31 +22,37 @@ O roteamento é inteligente: diz "compra leite" e vai para a Lista de Compras; d
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Roteamento inteligente (~75 regex) | ✅ Working | 70 testes passando |
-| Anotar com classificação automática | ✅ Working | 6 destinos |
-| Listar tarefas pendentes | ✅ Working | Por página |
-| Marcar tarefa como concluída | ✅ Working | Busca parcial |
-| Resumo diário (foco + rotina) | ✅ Working | Validado |
+| Roteamento inteligente (~75 regex) | ✅ Working | 70 testes, follow-up context |
+| Anotar com classificação automática | ✅ Working | 6 destinos + session follow-ups |
+| Listar tarefas pendentes | ✅ Working | Paginação completa |
+| Marcar tarefa como concluída | ✅ Working | Busca otimizada (last_destino first) |
+| Resumo diário (foco + rotina) | ✅ Working | Limitado a 3+3 items |
 | Pesquisa por voz no workspace | ✅ Working | Top 5 resultados |
-| Session continuity | ✅ Working | shouldEndSession=false |
+| Session continuity + follow-ups | ✅ Working | "compra leite" → "pão" → "café" |
+| Retry + error handling | ✅ Working | 1 retry em falhas transientes |
+| Structured logging | ✅ Working | intent, session, duration, destino |
 | Testes automatizados | ✅ Working | 84 testes, pytest |
-| Follow-ups ("e também...") | 🔧 Planned | Fase 5 |
-| Deploy automatizado | 🔧 Planned | Fase 7 |
+| Deploy automatizado | ✅ Working | deploy.ps1 + versioning |
+| Input validation | ✅ Working | Max 200 chars |
 
 ## Features
 
 - [x] Roteamento automático por contexto (compras, rotina, ideias, leituras, foco, inbox)
 - [x] Override explícito de destino ("coloca no foco X")
-- [x] Listar tarefas pendentes de qualquer página
-- [x] Marcar tarefas como concluídas (busca parcial, case-insensitive)
-- [x] Resumo diário: foco da semana + rotina pendente
+- [x] Follow-ups contextuais ("compra leite" → "pão" → "café")
+- [x] Listar tarefas pendentes de qualquer página (com paginação)
+- [x] Marcar tarefas como concluídas (busca parcial, case-insensitive, otimizada)
+- [x] Resumo diário: foco da semana + rotina pendente (limitado a 3+3)
 - [x] Pesquisa por voz no workspace inteiro
 - [x] Linguagem natural pt-BR
-- [x] Sessão persistente ("Mais alguma coisa?")
-- [ ] Follow-ups contextuais ("e também...")
-- [ ] Confirmação para ações destrutivas
+- [x] Sessão persistente com context follow-ups
+- [x] Retry automático em falhas transientes (1x)
+- [x] Input validation (200 chars max)
+- [x] Structured logging (intent, session, duration, destino)
+- [x] Deploy automatizado com versioning (deploy.ps1)
 - [ ] One-shot commands (sem abrir skill)
-- [ ] Deploy automatizado com rollback
+- [ ] Confirmação para ações destrutivas
+- [ ] Leitura completa de páginas específicas
 
 ## Destinos
 
@@ -64,17 +70,23 @@ O roteamento é inteligente: diz "compra leite" e vai para a Lista de Compras; d
 ```
 alexa-notion-skill/
 ├── lambda/
-│   ├── lambda_function.py  # Handlers + routing + Notion client (monolito)
+│   ├── lambda_function.py  # Alexa handlers + wiring (entry point)
+│   ├── config.py           # DESTINOS, API constants
+│   ├── routing.py          # ~75 regex rules + determinar_destino()
+│   ├── notion_client.py    # Notion API ops (retry, pagination)
+│   ├── messages.py         # Centralized response strings
 │   ├── requirements.txt    # ask-sdk-core, requests
 │   └── package/            # Deployment dependencies
 ├── tests/
 │   ├── conftest.py         # Fixtures e mocks
 │   ├── test_routing.py     # 70 testes de roteamento
 │   └── test_handlers.py    # 14 testes de Notion helpers
+├── deploy.ps1              # Automated deploy (test → package → upload → version)
+├── rollback.ps1            # List versions / rollback guide
 ├── interaction-model.json  # Alexa interaction model (5 custom intents)
-├── pytest.ini              # Configuração pytest
-├── SETUP.md                # Guia de instalação completo
-└── AUDITORIA.md            # Auditoria técnica e roadmap
+├── pytest.ini              # pytest config
+├── SETUP.md                # Installation guide
+└── AUDITORIA.md            # Technical audit + roadmap
 ```
 
 ## Tech Stack
@@ -106,11 +118,14 @@ pip install ask-sdk-core requests
 # Run tests
 python -m pytest
 
-# Package for deploy
-cd lambda
-pip install -r requirements.txt -t ./package
-Copy-Item lambda_function.py -Destination ./package/
-Compress-Archive -Path ./package/* -DestinationPath ../lambda-deployment.zip -Force
+# Deploy to Lambda (runs tests first)
+./deploy.ps1
+
+# Deploy skipping tests
+./deploy.ps1 -SkipTests
+
+# List Lambda versions
+./rollback.ps1 -Version list
 ```
 
 ### Testing
