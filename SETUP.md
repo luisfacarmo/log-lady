@@ -85,7 +85,7 @@ Mas para garantir, conecta cada uma individualmente.
 Abre o PowerShell na pasta do projeto:
 
 ```powershell
-cd "lambda"
+cd lambda
 
 # Instalar dependências numa pasta local
 pip install -r requirements.txt -t ./package

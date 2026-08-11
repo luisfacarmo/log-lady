@@ -8,6 +8,7 @@ lambda-deployment.zip
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
 
 # Environment / Secrets
 .env
@@ -17,6 +18,8 @@ __pycache__/
 *-output*.json
 *-out.json
 t-out.json
+t.json
+invoke-result.json
 
 # IDE
 .vscode/
