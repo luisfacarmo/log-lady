@@ -1,0 +1,256 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "meu caderno",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AnotarIntent",
+          "slots": [
+            {
+              "name": "texto",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "anota {texto}",
+            "anotar {texto}",
+            "adiciona {texto}",
+            "adicionar {texto}",
+            "lembra de {texto}",
+            "lembrar de {texto}",
+            "guarda {texto}",
+            "guardar {texto}",
+            "registra {texto}",
+            "escreve {texto}",
+            "aponta {texto}",
+            "nota {texto}",
+            "compra {texto}",
+            "comprar {texto}",
+            "preciso comprar {texto}",
+            "preciso de {texto}",
+            "ideia {texto}",
+            "nova ideia {texto}",
+            "e se {texto}",
+            "leitura {texto}",
+            "ver depois {texto}",
+            "salva link {texto}",
+            "foco {texto}",
+            "prioridade {texto}",
+            "tenho que {texto}",
+            "não esquecer {texto}",
+            "tarefa {texto}",
+            "nova tarefa {texto}",
+            "coloca no inbox {texto}",
+            "coloca nas compras {texto}",
+            "coloca nas ideias {texto}",
+            "coloca nas leituras {texto}",
+            "coloca no foco {texto}",
+            "coloca na rotina {texto}",
+            "adiciona no inbox {texto}",
+            "adiciona nas compras {texto}",
+            "adiciona nas ideias {texto}",
+            "adiciona nas leituras {texto}",
+            "adiciona no foco {texto}",
+            "adiciona na rotina {texto}"
+          ]
+        },
+        {
+          "name": "ListarTarefasIntent",
+          "slots": [
+            {
+              "name": "local",
+              "type": "LOCAL_DESTINO"
+            }
+          ],
+          "samples": [
+            "minhas tarefas",
+            "as minhas tarefas",
+            "quais são minhas tarefas",
+            "o que tenho pendente",
+            "o que tá pendente",
+            "lista tarefas",
+            "listar tarefas",
+            "tarefas pendentes",
+            "que tarefas tenho",
+            "quantas tarefas tenho",
+            "mostra as tarefas",
+            "o que preciso fazer",
+            "o que falta fazer",
+            "me diz as tarefas",
+            "lê a lista",
+            "o que tenho pra fazer",
+            "o que tenho no {local}",
+            "o que tá no {local}",
+            "lê o {local}",
+            "lê a {local}",
+            "lê as {local}",
+            "mostra o {local}",
+            "mostra a {local}",
+            "lista de {local}",
+            "o que tem no {local}",
+            "o que tem na {local}"
+          ]
+        },
+        {
+          "name": "MarcarConcluidaIntent",
+          "slots": [
+            {
+              "name": "tarefa",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "marca {tarefa} como feita",
+            "marca {tarefa} como concluída",
+            "conclui {tarefa}",
+            "concluir {tarefa}",
+            "já fiz {tarefa}",
+            "completa {tarefa}",
+            "completar {tarefa}",
+            "feito {tarefa}",
+            "terminei {tarefa}",
+            "acabei {tarefa}",
+            "risca {tarefa}",
+            "remove {tarefa}",
+            "tira {tarefa} da lista"
+          ]
+        },
+        {
+          "name": "ResumoIntent",
+          "slots": [],
+          "samples": [
+            "resumo do dia",
+            "resumo diário",
+            "meu resumo",
+            "como tá meu dia",
+            "o que tenho pra hoje",
+            "o que tem pra hoje",
+            "meu dia",
+            "como está meu dia",
+            "o que tenho hoje",
+            "agenda do dia",
+            "agenda de hoje",
+            "o que rola hoje",
+            "qual o plano"
+          ]
+        },
+        {
+          "name": "PesquisarIntent",
+          "slots": [
+            {
+              "name": "termo",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "busca {termo}",
+            "buscar {termo}",
+            "procura {termo}",
+            "procurar {termo}",
+            "pesquisa {termo}",
+            "pesquisar {termo}",
+            "acha {termo}",
+            "achar {termo}",
+            "encontra {termo}",
+            "onde tá {termo}",
+            "onde está {termo}",
+            "tem algo sobre {termo}",
+            "o que tem sobre {termo}"
+          ]
+        }
+      ],
+      "types": [
+        {
+          "name": "LOCAL_DESTINO",
+          "values": [
+            {
+              "id": "inbox",
+              "name": {
+                "value": "inbox",
+                "synonyms": [
+                  "caixa de entrada",
+                  "entrada",
+                  "caixa"
+                ]
+              }
+            },
+            {
+              "id": "compras",
+              "name": {
+                "value": "compras",
+                "synonyms": [
+                  "lista de compras",
+                  "mercado",
+                  "supermercado"
+                ]
+              }
+            },
+            {
+              "id": "ideias",
+              "name": {
+                "value": "ideias",
+                "synonyms": [
+                  "ideia",
+                  "projetos"
+                ]
+              }
+            },
+            {
+              "id": "leituras",
+              "name": {
+                "value": "leituras",
+                "synonyms": [
+                  "leitura",
+                  "links",
+                  "artigos"
+                ]
+              }
+            },
+            {
+              "id": "foco",
+              "name": {
+                "value": "foco",
+                "synonyms": [
+                  "foco da semana",
+                  "prioridades",
+                  "homepage"
+                ]
+              }
+            },
+            {
+              "id": "rotina",
+              "name": {
+                "value": "rotina",
+                "synonyms": [
+                  "rotina diária",
+                  "limpeza",
+                  "casa"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
