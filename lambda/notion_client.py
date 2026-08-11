@@ -81,33 +81,46 @@ def adicionar_checkbox(page_id: str, texto: str) -> bool:
 
 
 def ler_checkboxes_pendentes(page_id: str, limite: int = 10) -> list:
-    """Lê os blocos to-do não marcados de uma página."""
+    """Lê os blocos to-do não marcados de uma página. Suporta paginação."""
     url = f"{NOTION_API_URL}/blocks/{page_id}/children"
+    pendentes = []
+    start_cursor = None
 
-    try:
-        response = _request_with_retry("get", url, params={"page_size": 100})
-        data = response.json()
+    while True:
+        params = {"page_size": 100}
+        if start_cursor:
+            params["start_cursor"] = start_cursor
 
-        pendentes = []
-        for block in data.get("results", []):
-            if block.get("type") == "to_do":
-                todo = block.get("to_do", {})
-                if not todo.get("checked", True):
-                    rich_text = todo.get("rich_text", [])
-                    if rich_text:
-                        texto = rich_text[0].get("text", {}).get("content", "")
-                        if texto:
-                            pendentes.append(
-                                {"id": block["id"], "texto": texto}
-                            )
+        try:
+            response = _request_with_retry("get", url, params=params)
+            data = response.json()
 
-            if len(pendentes) >= limite:
+            for block in data.get("results", []):
+                if block.get("type") == "to_do":
+                    todo = block.get("to_do", {})
+                    if not todo.get("checked", True):
+                        rich_text = todo.get("rich_text", [])
+                        if rich_text:
+                            texto = rich_text[0].get("text", {}).get("content", "")
+                            if texto:
+                                pendentes.append(
+                                    {"id": block["id"], "texto": texto}
+                                )
+
+                if len(pendentes) >= limite:
+                    return pendentes
+
+            # Paginação: continuar se houver mais blocos
+            if data.get("has_more") and len(pendentes) < limite:
+                start_cursor = data.get("next_cursor")
+            else:
                 break
 
-        return pendentes
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Erro ao ler checkboxes: {e}")
-        return []
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Erro ao ler checkboxes: {e}")
+            return pendentes
+
+    return pendentes
 
 
 def marcar_checkbox(block_id: str) -> bool:

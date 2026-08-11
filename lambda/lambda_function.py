@@ -9,6 +9,7 @@ Handlers da Alexa que orquestram routing e operações Notion.
 """
 
 import logging
+import time
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
@@ -34,9 +35,29 @@ import messages as msg
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# --- Constantes de segurança ---
+# --- Constantes ---
 MAX_INPUT_LENGTH = 200
 MAX_RESUMO_ITEMS = 3
+
+
+# =============================================================================
+# OBSERVABILITY HELPERS
+# =============================================================================
+
+
+def log_request(handler_input: HandlerInput, intent_name: str, **extra):
+    """Log estruturado no início de cada handler."""
+    session_id = handler_input.request_envelope.session.session_id[-12:]
+    fields = " ".join(f"{k}={v}" for k, v in extra.items() if v)
+    logger.info(f"[{intent_name}] session=...{session_id} {fields}".strip())
+
+
+def log_result(intent_name: str, start_time: float, success: bool, **extra):
+    """Log estruturado no fim de cada handler com duração."""
+    duration_ms = int((time.time() - start_time) * 1000)
+    status = "ok" if success else "error"
+    fields = " ".join(f"{k}={v}" for k, v in extra.items() if v)
+    logger.info(f"[{intent_name}] status={status} duration={duration_ms}ms {fields}".strip())
 
 
 # =============================================================================
@@ -82,6 +103,7 @@ class AnotarIntentHandler(AbstractRequestHandler):
         return is_intent_name("AnotarIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
+        t0 = time.time()
         slots = handler_input.request_envelope.request.intent.slots
         texto = slots.get("texto", None)
 
@@ -93,31 +115,31 @@ class AnotarIntentHandler(AbstractRequestHandler):
             )
 
         texto_original = texto.value
-        # Validação: limitar tamanho do input
         if len(texto_original) > MAX_INPUT_LENGTH:
             texto_original = texto_original[:MAX_INPUT_LENGTH]
 
         destino_key = determinar_destino(texto_original)
 
         # Follow-up: se routing deu "inbox" (genérico) e existe contexto
-        # de sessão, reutilizar o último destino (ex: "e também café")
         if destino_key == "inbox":
             last = get_session_attr(handler_input, "last_destino")
-            # Só reutiliza se o texto parece ser um follow-up curto
             if last and last != "inbox" and len(texto_original.split()) <= 4:
                 destino_key = last
 
         destino = DESTINOS[destino_key]
         texto_limpo = limpar_texto(texto_original, destino_key)
 
+        log_request(handler_input, "AnotarIntent", destino=destino_key)
+
         if adicionar_checkbox(destino["page_id"], texto_limpo):
-            # Guardar contexto para follow-ups
             set_session_attr(handler_input, "last_destino", destino_key)
             speech = msg.ANOTAR_SUCESSO.format(
                 texto=texto_limpo, emoji=destino["emoji"], nome=destino["nome"]
             )
+            log_result("AnotarIntent", t0, True, destino=destino_key)
         else:
             speech = msg.ANOTAR_ERRO
+            log_result("AnotarIntent", t0, False, destino=destino_key)
 
         return (
             handler_input.response_builder.speak(speech)
@@ -179,6 +201,7 @@ class MarcarConcluidaIntentHandler(AbstractRequestHandler):
         return is_intent_name("MarcarConcluidaIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
+        t0 = time.time()
         slots = handler_input.request_envelope.request.intent.slots
         tarefa = slots.get("tarefa", None)
 
@@ -190,9 +213,17 @@ class MarcarConcluidaIntentHandler(AbstractRequestHandler):
             )
 
         tarefa_value = tarefa.value
+        log_request(handler_input, "MarcarConcluidaIntent")
 
-        # Procurar em todos os destinos
-        for key, dest in DESTINOS.items():
+        # Otimização: buscar primeiro no último destino usado (evita 6 requests)
+        last_destino = get_session_attr(handler_input, "last_destino")
+        search_order = list(DESTINOS.keys())
+        if last_destino and last_destino in search_order:
+            search_order.remove(last_destino)
+            search_order.insert(0, last_destino)
+
+        for key in search_order:
+            dest = DESTINOS[key]
             sucesso, nome_completo = encontrar_e_marcar_tarefa(
                 dest["page_id"], tarefa_value
             )
@@ -202,6 +233,7 @@ class MarcarConcluidaIntentHandler(AbstractRequestHandler):
                     emoji=dest["emoji"],
                     nome=dest["nome"],
                 )
+                log_result("MarcarConcluidaIntent", t0, True, destino=key)
                 return (
                     handler_input.response_builder.speak(speech)
                     .ask(msg.REPROMPT_GENERICO)
@@ -209,6 +241,7 @@ class MarcarConcluidaIntentHandler(AbstractRequestHandler):
                 )
 
         speech = msg.MARCAR_NAO_ENCONTRADA.format(tarefa=tarefa_value)
+        log_result("MarcarConcluidaIntent", t0, False)
         return (
             handler_input.response_builder.speak(speech)
             .ask(msg.REPROMPT_TENTA)
