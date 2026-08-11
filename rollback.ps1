@@ -21,7 +21,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$Version,
     [string]$FunctionName = "alexa-notion-skill",
-    [string]$Region = "eu-west-1"
+    [string]$Region = "us-east-1"
 )
 
 $ErrorActionPreference = "Stop"
